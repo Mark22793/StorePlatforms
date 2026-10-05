@@ -1,22 +1,50 @@
+using Microsoft.EntityFrameworkCore;
+using OrderService.Api.Data;
+using OrderService.Api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddDbContext<OrderDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("OrderConnection")));
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddProblemDetails();
+
+builder.Services.AddTransient<CorrelationIdHandler>();
+
+builder.Services.AddScoped<RabbitMqPublisher>();
+
+builder.Services.AddHttpClient<CatalogClient>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7124/");
+})
+.AddHttpMessageHandler<CorrelationIdHandler>()
+.AddStandardResilienceHandler(options =>
+{
+    options.Retry.MaxRetryAttempts = 3;
+    options.Retry.UseJitter = true;
+
+    options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+    options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(15);
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Temporary disabled para makita ang actual exception
+// app.UseExceptionHandler();
 
-app.UseAuthorization();
+app.UseHttpsRedirection();
 
 app.MapControllers();
 

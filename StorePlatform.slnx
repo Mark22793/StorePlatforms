@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="CatalogService.Api/CatalogService.Api.csproj" Id="c07d726d-5d0d-49fd-8ecb-a97badd4720f" />
+  <Project Path="OrderService.Api/OrderService.Api.csproj" Id="862a622d-c076-4c05-bb32-c131aad34221" />
 </Solution>
