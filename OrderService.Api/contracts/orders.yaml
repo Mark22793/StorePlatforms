@@ -1,0 +1,6 @@
+﻿namespace OrderService.Api.contracts
+{
+    public class orders
+    {
+    }
+}

@@ -1,0 +1,242 @@
+﻿openapi: 3.0.3
+
+info:
+  title: Catalog Service API
+  version: 1.0.0
+  description: API for managing store products.
+
+servers:
+  - url: https://localhost:7124
+
+paths:
+
+  /catalog/v1/products:
+    get:
+      summary: Get all products
+      operationId: getProducts
+      responses:
+        '200':
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+    post:
+      summary: Create a product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+  /catalog/v1/products/{id}:
+    get:
+      summary: Get product by ID
+      operationId: getProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Product retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+    put:
+      summary: Update a product
+      operationId: updateProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '204':
+          description: Product updated successfully
+        '400':
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '404':
+          description: Product not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+    delete:
+      summary: Delete a product
+      operationId: deleteProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '204':
+          description: Product deleted successfully
+        '404':
+          description: Product not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+components:
+
+  schemas:
+
+    Product:
+      type: object
+      required:
+        - productId
+        - name
+        - price
+        - stockQuantity
+        - isActive
+        - createdAt
+        - updatedAt
+      properties:
+        productId:
+          type: integer
+          format: int32
+          example: 1
+        name:
+          type: string
+          maxLength: 200
+          example: Wireless Gaming Mouse
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+          example: High precision optical gaming mouse
+        price:
+          type: number
+          format: decimal
+          example: 1499.99
+        stockQuantity:
+          type: integer
+          format: int32
+          example: 50
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateProductRequest:
+      type: object
+      required:
+        - name
+        - price
+        - stockQuantity
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+        stockQuantity:
+          type: integer
+          format: int32
+          minimum: 0
+        isActive:
+          type: boolean
+          default: true
+
+    UpdateProductRequest:
+      type: object
+      required:
+        - name
+        - price
+        - stockQuantity
+        - isActive
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+        stockQuantity:
+          type: integer
+          format: int32
+          minimum: 0
+        isActive:
+          type: boolean
+
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        instance:
+          type: string
+          nullable: true
