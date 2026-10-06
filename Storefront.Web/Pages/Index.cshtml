@@ -1,64 +1,70 @@
-﻿@page
+@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Storefront Catalog";
+    ViewData["Title"] = "Shop";
 }
 
-<div class="text-center mb-4">
-    <h1 class="display-5 fw-bold">🛍️ Storefront Catalog</h1>
-    <p class="lead text-muted">Browse products and place your order</p>
-</div>
+<section class="hero mb-4">
+    <div>
+        <h1 class="hero-title">Shop the catalog</h1>
+        <p class="hero-sub">Add items to your cart and check out. Orders go through the Order → Inventory → Payment saga.</p>
+    </div>
+    <form method="get" class="search-form" role="search">
+        <input type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search products…" aria-label="Search products" />
+        <button class="btn btn-dark" type="submit">Search</button>
+    </form>
+</section>
 
-@if (!ModelState.IsValid)
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+@if (Model.CatalogError != null)
 {
-    <div class="alert alert-danger text-center">
-        <div asp-validation-summary="All"></div>
+    <div class="alert alert-danger">
+        <strong>Can't reach the Catalog Service.</strong>
+        Make sure <code>CatalogService.Api</code> is running on <code>https://localhost:7124</code>.
+        <div class="small text-muted mt-1">@Model.CatalogError</div>
     </div>
 }
-
-<div class="row row-cols-1 row-cols-md-3 g-4">
-    @if (Model.Products != null && Model.Products.Any())
-    {
+else if (!Model.Products.Any())
+{
+    <div class="empty-state">
+        <div class="empty-icon">📦</div>
+        <h5>No products found</h5>
+        <p class="text-muted mb-0">
+            @(string.IsNullOrWhiteSpace(Model.Search) ? "The catalog is empty. Seed the Catalog database." : $"Nothing matches “{Model.Search}”.")
+        </p>
+    </div>
+}
+else
+{
+    <div class="product-grid">
         @foreach (var product in Model.Products)
         {
-            <div class="col">
-                <div class="card h-100 shadow-sm border-0">
-                    <div class="card-body">
-                        <h5 class="card-title fw-bold">@product.Name</h5>
-                        <p class="card-text text-muted">@product.Description</p>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <span class="fs-4 fw-bold text-success">₱@product.Price.ToString("N2")</span>
-                            <span class="badge bg-secondary">Stock: @product.StockQuantity</span>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-white border-top-0 pb-3">
-                        <form method="post">
-                            <input type="hidden" name="SelectedProductId" value="@product.ValidProductId" />
-
-                            <div class="mb-2">
-                                <label class="form-label small fw-bold">Customer Name</label>
-                                <input class="form-control form-control-sm" name="CustomerName" placeholder="e.g. Juan Dela Cruz" required />
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold">Quantity</label>
-                                <input type="number" name="Quantity" value="1" min="1" class="form-control form-control-sm" required />
-                            </div>
-
-                            <button type="submit" class="btn btn-primary w-100 fw-bold btn-sm">🛒 Buy Now (Trigger Saga)</button>
-                        </form>
+            var outOfStock = product.StockQuantity <= 0;
+            <article class="product-card">
+                <div class="product-thumb">@(string.IsNullOrEmpty(product.Name) ? "?" : product.Name[..1].ToUpper())</div>
+                <div class="product-body">
+                    <h2 class="product-name">@product.Name</h2>
+                    <p class="product-desc">@product.Description</p>
+                    <div class="product-meta">
+                        <span class="product-price">₱@product.Price.ToString("N2")</span>
+                        @if (outOfStock)
+                        {
+                            <span class="stock stock-out">Out of stock</span>
+                        }
+                        else
+                        {
+                            <span class="stock @(product.StockQuantity < 10 ? "stock-low" : "stock-ok")">@product.StockQuantity in stock</span>
+                        }
                     </div>
                 </div>
-            </div>
+                <form method="post" asp-page-handler="AddToCart" class="product-actions">
+                    <input type="hidden" name="productId" value="@product.ValidProductId" />
+                    <input type="hidden" name="search" value="@Model.Search" />
+                    <input type="number" name="quantity" value="1" min="1" max="@(outOfStock ? 1 : product.StockQuantity)" class="form-control qty-input" aria-label="Quantity" @(outOfStock ? "disabled" : "") />
+                    <button type="submit" class="btn btn-primary flex-grow-1" @(outOfStock ? "disabled" : "")>Add to cart</button>
+                </form>
+            </article>
         }
-    }
-    else
-    {
-        <div class="col-12 text-center py-5">
-            <div class="alert alert-warning shadow-sm">
-                <h5>No Products Found</h5>
-                <p class="mb-0">Please make sure the Catalog API is running and seeded with data.</p>
-            </div>
-        </div>
-    }
-</div>
+    </div>
+}

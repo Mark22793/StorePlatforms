@@ -1,0 +1,12 @@
+@model string?
+@* Message format: "success|text" or "error|text" *@
+@if (!string.IsNullOrEmpty(Model))
+{
+    var parts = Model.Split('|', 2);
+    var isError = parts[0] == "error";
+    var text = parts.Length > 1 ? parts[1] : parts[0];
+    <div class="alert @(isError ? "alert-danger" : "alert-success") alert-dismissible fade show" role="alert">
+        @text
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}

@@ -1,112 +1,102 @@
-using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Storefront.Web.Models;
+using Storefront.Web.Services;
 
 namespace Storefront.Web.Pages;
 
 public class CartModel : PageModel
 {
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly CartService _cart;
+    private readonly OrderApiClient _orders;
+    private readonly ILogger<CartModel> _logger;
 
-    public CartModel(IHttpClientFactory httpClientFactory)
+    public CartModel(CartService cart, OrderApiClient orders, ILogger<CartModel> logger)
     {
-        _httpClientFactory = httpClientFactory;
+        _cart = cart;
+        _orders = orders;
+        _logger = logger;
     }
 
-    public List<OrderItemDto> CartItems { get; set; } = new();
+    public List<CartItem> CartItems { get; set; } = new();
 
-    // Temporary cart data for testing
-    private void LoadCartItems()
-    {
-        CartItems = new List<OrderItemDto>
-        {
-            new OrderItemDto
-            {
-                ProductId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-                Quantity = 2,
-                UnitPrice = 100.00m
-            },
+    public decimal Total => CartItems.Sum(i => i.Subtotal);
 
-            new OrderItemDto
-            {
-                ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-                Quantity = 1,
-                UnitPrice = 250.00m
-            }
-        };
-    }
+    [BindProperty]
+    public string CustomerName { get; set; } = string.Empty;
+
+    [TempData]
+    public string? StatusMessage { get; set; }
 
     public void OnGet()
     {
-        LoadCartItems();
+        CartItems = _cart.GetItems();
     }
 
-    public async Task<IActionResult> OnPostCheckoutAsync(string customerName)
+    public IActionResult OnPostUpdate(Guid productId, int quantity)
     {
-        // Load cart items again because POST is a new request
-        LoadCartItems();
+        _cart.UpdateQuantity(productId, quantity);
+        return RedirectToPage();
+    }
 
-        if (string.IsNullOrWhiteSpace(customerName))
-        {
-            ModelState.AddModelError(
-                string.Empty,
-                "Customer name is required."
-            );
+    public IActionResult OnPostRemove(Guid productId)
+    {
+        _cart.Remove(productId);
+        StatusMessage = "success|Item removed from cart.";
+        return RedirectToPage();
+    }
 
-            return Page();
-        }
+    public IActionResult OnPostClear()
+    {
+        _cart.Clear();
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostCheckoutAsync()
+    {
+        CartItems = _cart.GetItems();
 
         if (!CartItems.Any())
         {
-            ModelState.AddModelError(
-                string.Empty,
-                "Your cart is empty."
-            );
-
+            ModelState.AddModelError(string.Empty, "Your cart is empty.");
             return Page();
         }
 
-        var client = _httpClientFactory.CreateClient("OrderService");
-
-        var createOrderPayload = new
+        if (string.IsNullOrWhiteSpace(CustomerName))
         {
-            CustomerName = customerName,
+            ModelState.AddModelError(nameof(CustomerName), "Customer name is required.");
+            return Page();
+        }
 
-            Items = CartItems.Select(item => new
+        var request = new CreateOrderRequest
+        {
+            CustomerName = CustomerName.Trim(),
+            Items = CartItems.Select(i => new CreateOrderItemRequest
             {
-                ProductId = item.ProductId,
-                Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice
+                ProductId = i.ProductId,
+                Quantity = i.Quantity
             }).ToList()
         };
 
-        var response = await client.PostAsJsonAsync(
-            "/orders/v1/orders",
-            createOrderPayload
-        );
-
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            ModelState.AddModelError(
-                string.Empty,
-                "Failed to create order. Please try again."
-            );
+            var (order, error) = await _orders.CreateOrderAsync(request);
 
+            if (order == null)
+            {
+                ModelState.AddModelError(string.Empty, error ?? "Failed to create order.");
+                return Page();
+            }
+
+            _cart.Clear();
+            return RedirectToPage("/OrderStatus", new { id = order.OrderId });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to reach Order Service");
+            ModelState.AddModelError(string.Empty,
+                $"Can't reach the Order Service (https://localhost:7054). {ex.Message}");
             return Page();
         }
-
-        var createdOrder =
-            await response.Content.ReadFromJsonAsync<OrderDto>();
-
-        if (createdOrder == null)
-        {
-            return RedirectToPage("/Error");
-        }
-
-        return RedirectToPage(
-            "/OrderStatus",
-            new { id = createdOrder.OrderId }
-        );
     }
 }

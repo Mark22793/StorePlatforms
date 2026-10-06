@@ -1,0 +1,44 @@
+@page "{id:guid}"
+@model Storefront.Web.Pages.Products.DeleteModel
+@{
+    ViewData["Title"] = "Delete Product";
+}
+
+<section class="hero mb-4">
+    <div>
+        <h1 class="hero-title">Delete product</h1>
+        <p class="hero-sub">This permanently removes the product from the catalog.</p>
+    </div>
+    <a asp-page="/Products/Index" class="btn btn-outline-dark">← Back to list</a>
+</section>
+
+@if (Model.Product != null)
+{
+    <div class="alert alert-danger">
+        Are you sure you want to delete <strong>@Model.Product.Name</strong>? This can't be undone.
+    </div>
+
+    <div class="card mb-3" style="max-width: 640px;">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Name</dt>
+                <dd class="col-sm-9">@Model.Product.Name</dd>
+
+                <dt class="col-sm-3">Description</dt>
+                <dd class="col-sm-9">@Model.Product.Description</dd>
+
+                <dt class="col-sm-3">Price</dt>
+                <dd class="col-sm-9">₱@Model.Product.Price.ToString("N2")</dd>
+
+                <dt class="col-sm-3">Stock</dt>
+                <dd class="col-sm-9">@Model.Product.StockQuantity</dd>
+            </dl>
+        </div>
+    </div>
+
+    <form method="post">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Delete product</button>
+        <a asp-page="/Products/Index" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+}

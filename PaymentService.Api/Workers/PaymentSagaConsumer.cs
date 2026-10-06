@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PaymentService.Api.Data;
@@ -14,6 +14,8 @@ public class PaymentSagaConsumer : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PaymentSagaConsumer> _logger;
+    private IConnection? _connection;
+    private IChannel? _channel;
 
     public PaymentSagaConsumer(
         IServiceProvider serviceProvider,
@@ -27,23 +29,45 @@ public class PaymentSagaConsumer : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Keep retrying instead of crashing the whole API when RabbitMQ isn't up yet
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await ConsumeAsync(stoppingToken);
+                return;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("RabbitMQ unavailable ({Message}). Retrying in 10 seconds...", ex.Message);
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+            }
+        }
+    }
+
+    private async Task ConsumeAsync(CancellationToken stoppingToken)
+    {
         var factory = new ConnectionFactory
         {
             HostName = _configuration["RabbitMQ:Host"] ?? "localhost"
         };
 
-        var connection = await factory.CreateConnectionAsync(stoppingToken);
-        var channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+        _connection = await factory.CreateConnectionAsync(stoppingToken);
+        _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-        await channel.ExchangeDeclareAsync("order-saga-exchange", ExchangeType.Topic, durable: true, cancellationToken: stoppingToken);
+        await _channel.ExchangeDeclareAsync("order-saga-exchange", ExchangeType.Topic, durable: true, cancellationToken: stoppingToken);
 
         var queueName = "payment-saga-queue";
-        await channel.QueueDeclareAsync(queueName, durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
+        await _channel.QueueDeclareAsync(queueName, durable: true, exclusive: false, autoDelete: false, cancellationToken: stoppingToken);
 
         // Makikinig sa StockReservedEvent bago i-charge ang bayad
-        await channel.QueueBindAsync(queueName, "order-saga-exchange", "stock.reserved", cancellationToken: stoppingToken);
+        await _channel.QueueBindAsync(queueName, "order-saga-exchange", "stock.reserved", cancellationToken: stoppingToken);
 
-        var consumer = new AsyncEventingBasicConsumer(channel);
+        var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (model, ea) =>
         {
             var body = ea.Body.ToArray();
@@ -101,16 +125,26 @@ public class PaymentSagaConsumer : BackgroundService
                         }
                     }
 
-                    await channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
+                    await _channel.BasicAckAsync(ea.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error processing payment saga event.");
-                    await channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
+                    await _channel.BasicNackAsync(ea.DeliveryTag, multiple: false, requeue: false, cancellationToken: stoppingToken);
                 }
             }
         };
 
-        await channel.BasicConsumeAsync(queueName, autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
+        await _channel.BasicConsumeAsync(queueName, autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
+
+        // Keep the connection alive so the consumer keeps receiving
+        await Task.Delay(Timeout.Infinite, stoppingToken);
+    }
+
+    public override void Dispose()
+    {
+        _channel?.CloseAsync();
+        _connection?.CloseAsync();
+        base.Dispose();
     }
 }

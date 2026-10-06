@@ -26,6 +26,28 @@ public class OrderSagaConsumer : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Keep retrying instead of crashing the whole API when RabbitMQ isn't up yet
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                await ConsumeAsync(stoppingToken);
+                return;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("RabbitMQ unavailable ({Message}). Retrying in 10 seconds...", ex.Message);
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+            }
+        }
+    }
+
+    private async Task ConsumeAsync(CancellationToken stoppingToken)
+    {
         var factory = new ConnectionFactory { HostName = "localhost" };
         _connection = await factory.CreateConnectionAsync(stoppingToken);
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);

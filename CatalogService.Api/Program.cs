@@ -19,6 +19,9 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 app.UseExceptionHandler();
 
+// Create the database and seed sample products on first run
+await CatalogSeeder.InitializeAsync(app.Services);
+
 // Swagger
 if (app.Environment.IsDevelopment())
 {

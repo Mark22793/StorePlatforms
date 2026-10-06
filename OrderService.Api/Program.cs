@@ -48,6 +48,12 @@ builder.Services.AddHttpClient<ICatalogClient, CatalogClient>(client =>
 
 var app = builder.Build();
 
+// Apply pending EF migrations (creates OrderDb on first run)
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<OrderDbContext>().Database.Migrate();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

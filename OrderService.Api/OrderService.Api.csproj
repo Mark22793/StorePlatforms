@@ -23,7 +23,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\CatalogService.Api\CatalogService.Api.csproj" />
+		<!-- OrderService calls CatalogService over HTTP (see CatalogClient), so it must NOT
+		     reference the CatalogService.Api project. Doing so pulled Catalog's controllers and
+		     its WeatherForecast type into this service, causing duplicate controllers/schema IDs
+		     and a 500 from /swagger/v1/swagger.json. -->
 		<ProjectReference Include="..\Shared\Shared.csproj" />
 	</ItemGroup>
 

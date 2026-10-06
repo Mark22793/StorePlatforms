@@ -26,6 +26,12 @@ builder.Services.AddHostedService<InventorySagaConsumer>();
 
 var app = builder.Build();
 
+// Create InventoryDb with its seeded stock on first run (no migrations in this service)
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<InventoryDbContext>().Database.EnsureCreated();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

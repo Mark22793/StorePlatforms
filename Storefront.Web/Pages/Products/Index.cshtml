@@ -1,0 +1,74 @@
+@page
+@model Storefront.Web.Pages.Products.IndexModel
+@{
+    ViewData["Title"] = "Manage Products";
+}
+
+<section class="hero mb-4">
+    <div>
+        <h1 class="hero-title">Manage products</h1>
+        <p class="hero-sub">Create, edit and delete catalog products. Changes are saved through the Catalog API.</p>
+    </div>
+    <a asp-page="/Products/Create" class="btn btn-primary">+ New product</a>
+</section>
+
+<partial name="_StatusMessage" model="Model.StatusMessage" />
+
+@if (Model.CatalogError != null)
+{
+    <div class="alert alert-danger">
+        <strong>Can't reach the Catalog Service.</strong>
+        Make sure <code>CatalogService.Api</code> is running on <code>https://localhost:7124</code>.
+        <div class="small text-muted mt-1">@Model.CatalogError</div>
+    </div>
+}
+else if (!Model.Products.Any())
+{
+    <div class="empty-state">
+        <div class="empty-icon">📦</div>
+        <h5>No products yet</h5>
+        <p class="text-muted mb-0">Click <strong>New product</strong> to add your first one.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th class="text-end">Price</th>
+                    <th class="text-end">Stock</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in Model.Products)
+                {
+                    <tr>
+                        <td class="fw-semibold">@product.Name</td>
+                        <td class="text-muted">@product.Description</td>
+                        <td class="text-end">₱@product.Price.ToString("N2")</td>
+                        <td class="text-end">@product.StockQuantity</td>
+                        <td>
+                            @if (product.IsActive)
+                            {
+                                <span class="badge text-bg-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">Inactive</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <a asp-page="/Products/Edit" asp-route-id="@product.ValidProductId" class="btn btn-sm btn-outline-dark">Edit</a>
+                            <a asp-page="/Products/Delete" asp-route-id="@product.ValidProductId" class="btn btn-sm btn-outline-danger">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

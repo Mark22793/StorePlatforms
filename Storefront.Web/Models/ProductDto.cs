@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Storefront.Web.Models;
 
@@ -24,4 +24,7 @@ public class ProductDto
 
     [JsonPropertyName("stockQuantity")]
     public int StockQuantity { get; set; }
+
+    [JsonPropertyName("isActive")]
+    public bool IsActive { get; set; } = true;
 }

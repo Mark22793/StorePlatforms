@@ -1,19 +1,33 @@
+using Storefront.Web.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Add Razor Pages
+// 1. Razor Pages + session (session holds the shopping cart)
 builder.Services.AddRazorPages();
-
-// 2. Register HTTP Clients para sa backend services
-builder.Services.AddHttpClient("CatalogService", client =>
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
 {
-    // Tiyaking nakaturo sa port 7124 (CatalogService)
-    client.BaseAddress = new Uri("https://localhost:7124/");
+    options.IdleTimeout = TimeSpan.FromHours(2);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CartService>();
+
+// 2. Typed HTTP clients for the backend services (URLs from appsettings.json -> ServiceUrls)
+var catalogUrl = builder.Configuration["ServiceUrls:Catalog"] ?? "https://localhost:7124/";
+var orderUrl = builder.Configuration["ServiceUrls:Order"] ?? "https://localhost:7054/";
+
+builder.Services.AddHttpClient<CatalogApiClient>(client =>
+{
+    client.BaseAddress = new Uri(catalogUrl);
+    client.Timeout = TimeSpan.FromSeconds(15);
 });
 
-builder.Services.AddHttpClient("OrderService", client =>
+builder.Services.AddHttpClient<OrderApiClient>(client =>
 {
-    // Inayos mula 7189 patungong 7054 batay sa launchSettings.json
-    client.BaseAddress = new Uri("https://localhost:7054/");
+    client.BaseAddress = new Uri(orderUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
 
 var app = builder.Build();
@@ -27,6 +41,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+app.UseSession();
 app.UseAuthorization();
 
 app.MapStaticAssets();

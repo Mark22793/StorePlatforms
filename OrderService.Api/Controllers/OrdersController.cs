@@ -184,7 +184,16 @@ public class OrdersController : ControllerBase
             }).ToList()
         };
 
-        await _rabbitMqPublisher.PublishOrderPlacedAsync(orderPlacedEvent);
+        try
+        {
+            await _rabbitMqPublisher.PublishOrderPlacedAsync(orderPlacedEvent);
+        }
+        catch (Exception ex)
+        {
+            // The order is already saved; it stays Pending until the saga can run
+            HttpContext.RequestServices.GetRequiredService<ILogger<OrdersController>>()
+                .LogError(ex, "Failed to publish OrderPlaced event for order {OrderId}", order.OrderId);
+        }
 
         return CreatedAtAction(
             nameof(GetOrder),

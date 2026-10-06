@@ -1,26 +1,60 @@
-﻿<!DOCTYPE html>
+@inject Storefront.Web.Services.CartService Cart
+@{
+    var cartCount = Cart.Count;
+    var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#4f46e5" />
     <title>@ViewData["Title"] - Storefront</title>
-    <!-- Bootstrap 5 CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Head", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-dark bg-dark mb-3">
-            <div class="container">
-                <a class="navbar-brand fw-bold" asp-page="/Index">🛍️ Storefront Web App</a>
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <header class="site-header">
+        <nav class="container d-flex align-items-center gap-3" aria-label="Primary">
+            <a class="brand" asp-page="/Index">🛍️ Storefront</a>
+            <div class="nav-links">
+                <a asp-page="/Index"
+                   class="@(currentPage == "/Index" ? "active" : "")"
+                   aria-current="@(currentPage == "/Index" ? "page" : null)">Shop</a>
+                <a asp-page="/Orders"
+                   class="@(currentPage == "/Orders" ? "active" : "")"
+                   aria-current="@(currentPage == "/Orders" ? "page" : null)">Orders</a>
+                <a asp-page="/Products/Index"
+                   class="@(currentPage == "/Products/Index" ? "active" : "")"
+                   aria-current="@(currentPage == "/Products/Index" ? "page" : null)">Manage Products</a>
             </div>
+            <a asp-page="/Cart"
+               class="cart-link ms-auto @(currentPage == "/Cart" ? "active" : "")"
+               aria-current="@(currentPage == "/Cart" ? "page" : null)"
+               aria-label="@($"Cart{(cartCount > 0 ? $", {cartCount} item{(cartCount == 1 ? "" : "s")}" : " (empty)")}")">
+                <span aria-hidden="true">🛒</span> Cart
+                @if (cartCount > 0)
+                {
+                    <span class="cart-badge" aria-hidden="true">@cartCount</span>
+                }
+            </a>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
+    <main id="main" role="main" tabindex="-1" class="container py-4">
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="container small text-muted">
+            Storefront · Catalog, Order, Inventory &amp; Payment microservices
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
