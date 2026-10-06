@@ -1,5 +1,5 @@
-﻿using CatalogService.Api.Data;
-using CatalogService.Api.Models;
+﻿using CatalogService.Api;
+using CatalogService.Api.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,11 +28,11 @@ public class ProductsController : ControllerBase
         return Ok(products);
     }
 
-    // GET: /catalog/v1/products/1
-    [HttpGet("{id:int}")]
+    // GET: /catalog/v1/products/{id}
+    [HttpGet("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Product>> GetProduct(int id)
+    public async Task<ActionResult<Product>> GetProduct(Guid id)
     {
         var product = await _context.Products
             .AsNoTracking()
@@ -83,7 +83,11 @@ public class ProductsController : ControllerBase
             );
         }
 
-        product.ProductId = 0;
+        if (product.ProductId == Guid.Empty)
+        {
+            product.ProductId = Guid.NewGuid();
+        }
+
         product.CreatedAt = DateTime.UtcNow;
         product.UpdatedAt = DateTime.UtcNow;
 
@@ -96,12 +100,12 @@ public class ProductsController : ControllerBase
             product);
     }
 
-    // PUT: /catalog/v1/products/1
-    [HttpPut("{id:int}")]
+    // PUT: /catalog/v1/products/{id}
+    [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateProduct(int id, Product product)
+    public async Task<IActionResult> UpdateProduct(Guid id, Product product)
     {
         if (id != product.ProductId)
         {
@@ -163,11 +167,11 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
-    // DELETE: /catalog/v1/products/1
-    [HttpDelete("{id:int}")]
+    // DELETE: /catalog/v1/products/{id}
+    [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteProduct(int id)
+    public async Task<IActionResult> DeleteProduct(Guid id)
     {
         var product = await _context.Products
             .FirstOrDefaultAsync(p => p.ProductId == id);

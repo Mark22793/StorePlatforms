@@ -1,4 +1,8 @@
 <Solution>
   <Project Path="CatalogService.Api/CatalogService.Api.csproj" Id="c07d726d-5d0d-49fd-8ecb-a97badd4720f" />
+  <Project Path="InventoryService.Api/InventoryService.Api.csproj" Id="c85ae259-7b56-4fb9-84a7-64de35be13fd" />
   <Project Path="OrderService.Api/OrderService.Api.csproj" Id="862a622d-c076-4c05-bb32-c131aad34221" />
+  <Project Path="PaymentService.Api/PaymentService.Api.csproj" Id="a1705506-24c1-42ad-b29d-599cb40d924a" />
+  <Project Path="Shared/Shared.csproj" Id="bf44c560-5c54-420c-916f-3f788d8fde82" />
+  <Project Path="Storefront.Web/Storefront.Web.csproj" />
 </Solution>

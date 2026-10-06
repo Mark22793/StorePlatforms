@@ -12,12 +12,12 @@ namespace OrderService.Api.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly OrderDbContext _context;
-    private readonly CatalogClient _catalogClient;
+    private readonly ICatalogClient _catalogClient;
     private readonly RabbitMqPublisher _rabbitMqPublisher;
 
     public OrdersController(
         OrderDbContext context,
-        CatalogClient catalogClient,
+        ICatalogClient catalogClient,
         RabbitMqPublisher rabbitMqPublisher)
     {
         _context = context;
@@ -37,10 +37,10 @@ public class OrdersController : ControllerBase
         return Ok(orders);
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Order>> GetOrder(int id)
+    public async Task<ActionResult<Order>> GetOrder(Guid id)
     {
         var order = await _context.Orders
             .Include(o => o.Items)
@@ -63,8 +63,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Order>> CreateOrder(
-        CreateOrderRequest request)
+    public async Task<ActionResult<Order>> CreateOrder(CreateOrderRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.CustomerName))
         {
@@ -86,12 +85,12 @@ public class OrdersController : ControllerBase
 
         foreach (var item in request.Items)
         {
-            if (item.ProductId <= 0)
+            if (item.ProductId == Guid.Empty)
             {
                 return Problem(
                     statusCode: StatusCodes.Status400BadRequest,
                     title: "Invalid Order Item",
-                    detail: "Product ID must be greater than zero."
+                    detail: "Valid Product ID (Guid) is required."
                 );
             }
 
@@ -107,6 +106,7 @@ public class OrdersController : ControllerBase
 
         var order = new Order
         {
+            OrderId = Guid.NewGuid(),
             CustomerName = request.CustomerName,
             Status = "Pending",
             CreatedAt = DateTime.UtcNow,
@@ -115,37 +115,50 @@ public class OrdersController : ControllerBase
 
         foreach (var item in request.Items)
         {
-            var product = await _catalogClient.GetProductAsync(item.ProductId);
+            try
+            {
+                var product = await _catalogClient.GetProductByIdAsync(item.ProductId);
 
-            if (product == null)
+                if (product == null)
+                {
+                    return Problem(
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Product Not Found",
+                        detail: $"Product with ID ({item.ProductId}) was not found in Catalog Service."
+                    );
+                }
+
+                var unitPrice = (decimal)product.Price;
+                var subtotal = unitPrice * item.Quantity;
+
+                order.Items.Add(new OrderItem
+                {
+                    OrderItemId = Guid.NewGuid(),
+                    OrderId = order.OrderId,
+                    ProductId = product.ProductId,
+                    Quantity = item.Quantity,
+                    UnitPrice = unitPrice,
+                    Subtotal = subtotal
+                });
+
+                order.TotalAmount += subtotal;
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 return Problem(
                     statusCode: StatusCodes.Status404NotFound,
                     title: "Product Not Found",
-                    detail: $"Product with ID {item.ProductId} was not found in Catalog Service."
+                    detail: $"Product with ID ({item.ProductId}) was not found in Catalog Service."
                 );
             }
-
-            if (!product.IsActive)
+            catch (Exception ex)
             {
                 return Problem(
                     statusCode: StatusCodes.Status400BadRequest,
-                    title: "Product Inactive",
-                    detail: $"Product with ID {item.ProductId} is inactive."
+                    title: "Catalog Request Failed",
+                    detail: ex.Message
                 );
             }
-
-            var subtotal = product.Price * item.Quantity;
-
-            order.Items.Add(new OrderItem
-            {
-                ProductId = product.ProductId,
-                Quantity = item.Quantity,
-                UnitPrice = product.Price,
-                Subtotal = subtotal
-            });
-
-            order.TotalAmount += subtotal;
         }
 
         _context.Orders.Add(order);
@@ -179,18 +192,18 @@ public class OrdersController : ControllerBase
             order);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateOrder(int id, Order order)
+    public async Task<IActionResult> UpdateOrder(Guid id, Order order)
     {
         if (id != order.OrderId)
         {
             return Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid Order ID",
-                detail: "The order ID in the URL does not match the product ID in the request body."
+                detail: "The order ID in the URL does not match the body."
             );
         }
 
@@ -215,10 +228,10 @@ public class OrdersController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteOrder(int id)
+    public async Task<IActionResult> DeleteOrder(Guid id)
     {
         var order = await _context.Orders
             .FirstOrDefaultAsync(o => o.OrderId == id);

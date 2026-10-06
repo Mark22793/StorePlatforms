@@ -1,0 +1,25 @@
+﻿{
+  "runtime": "Net80",
+  "defaultVariables": null,
+  "documentGenerator": {
+    "fromDocument": {
+      "json": "",
+      "url": "catalog-swagger.json",
+      "output": null
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "generateClientClasses": true,
+      "generateClientInterfaces": true,
+      "injectHttpClient": true,
+      "disposeHttpClient": true,
+      "exceptionClass": "ApiException",
+      "wrapDtoExceptions": true,
+      "httpClientType": "System.Net.Http.HttpClient",
+      "className": "CatalogClient",
+      "namespace": "OrderService.Api.Services",
+      "output": "Services/CatalogClient.generated.cs"
+    }
+  }
+}

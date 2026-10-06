@@ -1,0 +1,86 @@
+﻿@page "{id:int}"
+@model Storefront.Web.Pages.OrderStatusModel
+
+@{
+    ViewData["Title"] = "Order Status";
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+
+        @if (Model.Order == null)
+        {
+            <div class="alert alert-danger text-center">
+                <h4>Order Not Found</h4>
+                <p>Unable to retrieve order details.</p>
+
+                <a asp-page="/Index" class="btn btn-primary mt-2">
+                    Back to Catalog
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="card shadow-lg border-0">
+                <div class="card-body">
+
+                    <h2 class="mb-4">Order Status</h2>
+
+                    <p>
+                        <strong>Order ID:</strong>
+                        @Model.Order.OrderId
+                    </p>
+
+                    <p>
+                        <strong>Customer:</strong>
+                        @Model.Order.CustomerName
+                    </p>
+
+                    <p>
+                        <strong>Status:</strong>
+                        @Model.Order.Status
+                    </p>
+
+                    <p>
+                        <strong>Total:</strong>
+                        ₱@Model.Order.TotalAmount.ToString("N2")
+                    </p>
+
+                    <hr />
+
+                    <h5>Order Items</h5>
+
+                    @if (Model.Order.Items != null && Model.Order.Items.Any())
+                    {
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Product ID</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (var item in Model.Order.Items)
+                                {
+                                    <tr>
+                                        <td>@item.ProductId</td>
+                                        <td>@item.Quantity</td>
+                                        <td>₱@item.UnitPrice.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+
+                    <a asp-page="/Index" class="btn btn-primary">
+                        Back to Catalog
+                    </a>
+
+                </div>
+            </div>
+        }
+
+    </div>
+</div>

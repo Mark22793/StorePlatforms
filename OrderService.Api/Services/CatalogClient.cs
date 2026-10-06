@@ -2,7 +2,12 @@
 
 namespace OrderService.Api.Services;
 
-public class CatalogClient
+public interface ICatalogClient
+{
+    Task<CatalogItemDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default);
+}
+
+public class CatalogClient : ICatalogClient
 {
     private readonly HttpClient _httpClient;
 
@@ -11,19 +16,22 @@ public class CatalogClient
         _httpClient = httpClient;
     }
 
-    public async Task<CatalogProduct?> GetProductAsync(int productId)
+    public async Task<CatalogItemDto?> GetProductByIdAsync(Guid productId, CancellationToken cancellationToken = default)
     {
-        return await _httpClient.GetFromJsonAsync<CatalogProduct>(
-            $"catalog/v1/products/{productId}");
+        var response = await _httpClient.GetAsync($"/catalog/v1/products/{productId}", cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        return await response.Content.ReadFromJsonAsync<CatalogItemDto>(cancellationToken: cancellationToken);
     }
 }
 
-public class CatalogProduct
-{
-    public int ProductId { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public decimal Price { get; set; }
-    public int StockQuantity { get; set; }
-    public bool IsActive { get; set; }
-}
+public record CatalogItemDto(
+    Guid ProductId,
+    string Name,
+    string Description,
+    decimal Price,
+    int StockQuantity);

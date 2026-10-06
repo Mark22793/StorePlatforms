@@ -1,0 +1,64 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Storefront Catalog";
+}
+
+<div class="text-center mb-4">
+    <h1 class="display-5 fw-bold">🛍️ Storefront Catalog</h1>
+    <p class="lead text-muted">Browse products and place your order</p>
+</div>
+
+@if (!ModelState.IsValid)
+{
+    <div class="alert alert-danger text-center">
+        <div asp-validation-summary="All"></div>
+    </div>
+}
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    @if (Model.Products != null && Model.Products.Any())
+    {
+        @foreach (var product in Model.Products)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">@product.Name</h5>
+                        <p class="card-text text-muted">@product.Description</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="fs-4 fw-bold text-success">₱@product.Price.ToString("N2")</span>
+                            <span class="badge bg-secondary">Stock: @product.StockQuantity</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-top-0 pb-3">
+                        <form method="post">
+                            <input type="hidden" name="SelectedProductId" value="@product.ValidProductId" />
+
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold">Customer Name</label>
+                                <input class="form-control form-control-sm" name="CustomerName" placeholder="e.g. Juan Dela Cruz" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Quantity</label>
+                                <input type="number" name="Quantity" value="1" min="1" class="form-control form-control-sm" required />
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 fw-bold btn-sm">🛒 Buy Now (Trigger Saga)</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12 text-center py-5">
+            <div class="alert alert-warning shadow-sm">
+                <h5>No Products Found</h5>
+                <p class="mb-0">Please make sure the Catalog API is running and seeded with data.</p>
+            </div>
+        </div>
+    }
+</div>

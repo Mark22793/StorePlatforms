@@ -2,7 +2,7 @@
 
 public class OrderPlacedEvent
 {
-    public int OrderId { get; set; }
+    public Guid OrderId { get; set; }
 
     public string CustomerName { get; set; } = string.Empty;
 
@@ -17,7 +17,7 @@ public class OrderPlacedEvent
 
 public class OrderPlacedItem
 {
-    public int ProductId { get; set; }
+    public Guid ProductId { get; set; }
 
     public int Quantity { get; set; }
 

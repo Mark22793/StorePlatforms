@@ -1,4 +1,4 @@
-﻿using CatalogService.Api.Models;
+﻿using CatalogService.Api;
 using Microsoft.EntityFrameworkCore;
 
 namespace CatalogService.Api.Data;
@@ -19,6 +19,9 @@ public class CatalogDbContext : DbContext
         modelBuilder.Entity<Product>(entity =>
         {
             entity.HasKey(p => p.ProductId);
+
+            entity.Property(p => p.ProductId)
+                .ValueGeneratedOnAdd();
 
             entity.Property(p => p.Name)
                 .IsRequired()

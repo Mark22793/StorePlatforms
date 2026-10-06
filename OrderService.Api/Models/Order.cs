@@ -2,7 +2,7 @@
 
 public class Order
 {
-    public int OrderId { get; set; }
+    public Guid OrderId { get; set; } // Pinalitan mula int patungong Guid
 
     public string CustomerName { get; set; } = string.Empty;
 
