@@ -31,7 +31,9 @@ cd StorePlatforms
 Team Contribution Matrix
 Student Name	Role	Responsibilities & Deliverables
 Mark Dave Cardenas	Backend Developer	Built and implemented backend services: CatalogService.Api, InventoryService.Api, OrderService.Api, and PaymentService.Api. Handled backend application logic, API endpoints, and service integrations.
+
 Jomarie Callueng	Frontend & Integration Lead	Developed the Storefront.Web frontend application. Connected and integrated the frontend application with all backend API services. Handled frontend-to-backend HTTP communications and API requests.
+
 Jherome Flores	Database & Documentation Lead	Configured and applied EF Core Database Migrations and Seeding for each service. Designed and created the System Architecture Diagram. Managed project documentation including README.md and CONTRIBUTIONS.md.
 
 
