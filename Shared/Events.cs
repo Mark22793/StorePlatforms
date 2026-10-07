@@ -1,11 +1,19 @@
 ﻿namespace Shared.Events;
 
+public record OrderItem(
+    Guid ProductId,
+    int Quantity,
+    decimal UnitPrice,
+    decimal Subtotal
+);
+
 public record OrderPlacedEvent(
     Guid OrderId,
     Guid ProductId,
     int Quantity,
     decimal TotalAmount,
-    string CorrelationId
+    string CorrelationId,
+    List<OrderItem>? Items = null
 );
 
 
@@ -23,13 +31,11 @@ public record ReleaseStockCommand(
 );
 
 
-
 public record ProcessPaymentCommand(
     Guid OrderId,
     decimal TotalAmount,
     string CorrelationId
 );
-
 
 
 public class PaymentProcessedEvent
@@ -41,7 +47,11 @@ public class PaymentProcessedEvent
 
     public PaymentProcessedEvent() { }
 
-    public PaymentProcessedEvent(Guid orderId, decimal amount, string transactionId, string correlationId)
+    public PaymentProcessedEvent(
+        Guid orderId,
+        decimal amount,
+        string transactionId,
+        string correlationId)
     {
         OrderId = orderId;
         Amount = amount;
@@ -61,7 +71,12 @@ public class StockReservedEvent
 
     public StockReservedEvent() { }
 
-    public StockReservedEvent(Guid orderId, Guid productId, int quantity, decimal totalPrice, string correlationId)
+    public StockReservedEvent(
+        Guid orderId,
+        Guid productId,
+        int quantity,
+        decimal totalPrice,
+        string correlationId)
     {
         OrderId = orderId;
         ProductId = productId;
@@ -72,7 +87,6 @@ public class StockReservedEvent
 }
 
 
-
 public class InventoryFailedEvent
 {
     public Guid OrderId { get; set; }
@@ -81,7 +95,10 @@ public class InventoryFailedEvent
 
     public InventoryFailedEvent() { }
 
-    public InventoryFailedEvent(Guid orderId, string reason, string correlationId)
+    public InventoryFailedEvent(
+        Guid orderId,
+        string reason,
+        string correlationId)
     {
         OrderId = orderId;
         Reason = reason;

@@ -15,7 +15,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CartService>();
 
 // 2. Typed HTTP clients for the backend services (URLs from appsettings.json -> ServiceUrls)
-var catalogUrl = builder.Configuration["ServiceUrls:Catalog"] ?? "https://localhost:7124/";
+var catalogUrl = builder.Configuration["ServiceUrls:Catalog"] ?? "https://localhost:7173/";
 var orderUrl = builder.Configuration["ServiceUrls:Order"] ?? "https://localhost:7054/";
 
 builder.Services.AddHttpClient<CatalogApiClient>(client =>

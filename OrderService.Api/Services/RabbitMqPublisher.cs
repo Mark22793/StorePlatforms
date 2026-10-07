@@ -19,7 +19,7 @@ public class RabbitMqPublisher
     {
         var factory = new ConnectionFactory
         {
-            HostName = _configuration["RabbitMQ:HostName"] ?? "localhost",
+            HostName = _configuration["RabbitMQ:Host"] ?? "localhost",
             UserName = _configuration["RabbitMQ:UserName"] ?? "guest",
             Password = _configuration["RabbitMQ:Password"] ?? "guest"
         };
@@ -31,7 +31,7 @@ public class RabbitMqPublisher
             await connection.CreateChannelAsync();
 
         await channel.ExchangeDeclareAsync(
-            exchange: "store.events",
+            exchange: "order-saga-exchange",
             type: ExchangeType.Topic,
             durable: true,
             autoDelete: false);
@@ -47,8 +47,8 @@ public class RabbitMqPublisher
         };
 
         await channel.BasicPublishAsync(
-            exchange: "store.events",
-            routingKey: "order.placed",
+            exchange: "order-saga-exchange",
+            routingKey: "order.created",
             mandatory: false,
             basicProperties: properties,
             body: body);
