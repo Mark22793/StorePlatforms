@@ -88,15 +88,15 @@ public class PaymentSagaConsumer : BackgroundService
                         var stockEvent = JsonSerializer.Deserialize<StockReservedEvent>(message);
                         if (stockEvent != null)
                         {
-                            // Mock Payment Logic: Kung ang halaga ay higit sa 0 at mas mababa sa 100,000, SUCCESS.
-                            bool isPaymentSuccessful = stockEvent.TotalPrice > 0 && stockEvent.TotalPrice < 100000;
+                            // Mock Payment Logic: Basta mas malaki sa 0 ang total amount, SUCCESS.
+                            bool isPaymentSuccessful = stockEvent.TotalPrice > 0;
 
                             var payment = new Payment
                             {
                                 OrderId = stockEvent.OrderId,
                                 Amount = stockEvent.TotalPrice,
                                 Status = isPaymentSuccessful ? "Success" : "Failed",
-                                FailureReason = isPaymentSuccessful ? null : "Transaction Limit Exceeded / Declined",
+                                FailureReason = isPaymentSuccessful ? null : "Invalid Amount",
                                 TransactionDate = DateTime.UtcNow
                             };
 

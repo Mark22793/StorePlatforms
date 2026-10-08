@@ -32,13 +32,31 @@ public class InventoriesController : ControllerBase
         return Ok(item);
     }
 
-    // 3. CREATE STOCK ITEM
+    // 3. CREATE / UPSERT STOCK ITEM
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] InventoryItem item)
     {
+        var existingItem = await _context.Inventories.FirstOrDefaultAsync(i => i.ProductId == item.ProductId);
+
+        if (existingItem != null)
+        {
+            existingItem.Quantity = item.Quantity;
+            existingItem.LastUpdated = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return Ok(existingItem);
+        }
+
+        if (item.Id == Guid.Empty)
+        {
+            item.Id = Guid.NewGuid();
+        }
+
+        item.ReservedQuantity = 0;
         item.LastUpdated = DateTime.UtcNow;
+
         _context.Inventories.Add(item);
         await _context.SaveChangesAsync();
+
         return CreatedAtAction(nameof(GetByProductId), new { productId = item.ProductId }, item);
     }
 
@@ -76,12 +94,12 @@ public class InventoriesController : ControllerBase
         var item = await _context.Inventories.FirstOrDefaultAsync(i => i.ProductId == request.ProductId);
         if (item == null) return NotFound("Hindi nahanap ang produkto sa imbentaryo.");
 
-        if (item.Quantity < request.Quantity)
+        int availableStock = item.Quantity - item.ReservedQuantity;
+        if (availableStock < request.Quantity)
         {
             return BadRequest("Kulang ang stock para sa order na ito.");
         }
 
-        item.Quantity -= request.Quantity;
         item.ReservedQuantity += request.Quantity;
         item.LastUpdated = DateTime.UtcNow;
 
@@ -96,10 +114,13 @@ public class InventoriesController : ControllerBase
         var item = await _context.Inventories.FirstOrDefaultAsync(i => i.ProductId == request.ProductId);
         if (item == null) return NotFound("Hindi nahanap ang produkto sa imbentaryo.");
 
-        item.Quantity += request.Quantity;
         if (item.ReservedQuantity >= request.Quantity)
         {
             item.ReservedQuantity -= request.Quantity;
+        }
+        else
+        {
+            item.ReservedQuantity = 0;
         }
         item.LastUpdated = DateTime.UtcNow;
 

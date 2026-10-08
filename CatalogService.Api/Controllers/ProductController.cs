@@ -10,10 +10,17 @@ namespace CatalogService.Api.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly CatalogDbContext _context;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<ProductsController> _logger;
 
-    public ProductsController(CatalogDbContext context)
+    public ProductsController(
+        CatalogDbContext context,
+        IHttpClientFactory httpClientFactory,
+        ILogger<ProductsController> logger)
     {
         _context = context;
+        _httpClientFactory = httpClientFactory;
+        _logger = logger;
     }
 
     // GET: /catalog/v1/products
@@ -93,6 +100,32 @@ public class ProductsController : ControllerBase
 
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
+
+        // --- AUTOMATIC SYNC TO INVENTORY SERVICE (PORT 7015) ---
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            var inventoryUrl = "https://localhost:7015/inventory/v1/Inventories";
+
+            var inventoryPayload = new
+            {
+                Id = Guid.NewGuid(),
+                ProductId = product.ProductId,
+                Quantity = product.StockQuantity,
+                ReservedQuantity = 0,
+                LastUpdated = DateTime.UtcNow
+            };
+
+            var response = await client.PostAsJsonAsync(inventoryUrl, inventoryPayload);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to sync product to InventoryService. Status: {StatusCode}", response.StatusCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while syncing new product to InventoryService.");
+        }
 
         return CreatedAtAction(
             nameof(GetProduct),

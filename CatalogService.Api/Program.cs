@@ -11,6 +11,7 @@ builder.Services.AddDbContext<CatalogDbContext>(options =>
 // Controllers
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
+builder.Services.AddHttpClient();
 
 // Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
