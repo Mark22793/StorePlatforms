@@ -6,12 +6,12 @@
 
 <section class="hero mb-4">
     <div>
-        <h1 class="hero-title">Shop the catalog</h1>
-        <p class="hero-sub">Add items to your cart and check out. Orders go through the Order → Inventory → Payment saga.</p>
+        <h1 class="hero-title">Shop the Catalog</h1>
+        <p class="hero-sub">Explore our products powered by microservices architecture.</p>
     </div>
     <form method="get" class="search-form" role="search">
-        <input type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search products…" aria-label="Search products" />
-        <button class="btn btn-dark" type="submit">Search</button>
+        <input type="search" name="search" value="@Model.Search" class="form-control" placeholder="Search products..." aria-label="Search products" />
+        <button class="btn btn-light text-primary" type="submit">Search</button>
     </form>
 </section>
 
@@ -19,19 +19,19 @@
 
 @if (Model.CatalogError != null)
 {
-    <div class="alert alert-danger">
+    <div class="alert alert-danger shadow-sm rounded-3">
         <strong>Can't reach the Catalog Service.</strong>
-        Make sure <code>CatalogService.Api</code> is running on <code>https://localhost:7124</code>.
+        Make sure <code>CatalogService.Api</code> is running.
         <div class="small text-muted mt-1">@Model.CatalogError</div>
     </div>
 }
 else if (!Model.Products.Any())
 {
-    <div class="empty-state">
-        <div class="empty-icon">📦</div>
-        <h5>No products found</h5>
+    <div class="empty-state text-center py-5 bg-white rounded-3 border">
+        <div class="fs-1 mb-2">📦</div>
+        <h5 class="fw-bold">No products found</h5>
         <p class="text-muted mb-0">
-            @(string.IsNullOrWhiteSpace(Model.Search) ? "The catalog is empty. Seed the Catalog database." : $"Nothing matches “{Model.Search}”.")
+            @(string.IsNullOrWhiteSpace(Model.Search) ? "The catalog is empty." : $"Nothing matches “{Model.Search}”.")
         </p>
     </div>
 }
@@ -42,10 +42,15 @@ else
         {
             var outOfStock = product.StockQuantity <= 0;
             <article class="product-card">
-                <div class="product-thumb">@(string.IsNullOrEmpty(product.Name) ? "?" : product.Name[..1].ToUpper())</div>
-                <div class="product-body">
+                <div>
+                    <div class="product-thumb">
+                        @(string.IsNullOrEmpty(product.Name) ? "?" : product.Name[..1].ToUpper())
+                    </div>
                     <h2 class="product-name">@product.Name</h2>
                     <p class="product-desc">@product.Description</p>
+                </div>
+
+                <div>
                     <div class="product-meta">
                         <span class="product-price">₱@product.Price.ToString("N2")</span>
                         @if (outOfStock)
@@ -54,16 +59,21 @@ else
                         }
                         else
                         {
-                            <span class="stock @(product.StockQuantity < 10 ? "stock-low" : "stock-ok")">@product.StockQuantity in stock</span>
+                            <span class="stock @(product.StockQuantity < 10 ? "stock-low" : "stock-ok")">
+                                @product.StockQuantity in stock
+                            </span>
                         }
                     </div>
+
+                    <form method="post" asp-page-handler="AddToCart" class="product-actions">
+                        <input type="hidden" name="productId" value="@product.ValidProductId" />
+                        <input type="hidden" name="search" value="@Model.Search" />
+                        <input type="number" name="quantity" value="1" min="1" max="@(outOfStock ? 1 : product.StockQuantity)" class="form-control qty-input" @(outOfStock ? "disabled" : "") />
+                        <button type="submit" class="btn btn-primary flex-grow-1" @(outOfStock ? "disabled" : "")>
+                            Add to cart
+                        </button>
+                    </form>
                 </div>
-                <form method="post" asp-page-handler="AddToCart" class="product-actions">
-                    <input type="hidden" name="productId" value="@product.ValidProductId" />
-                    <input type="hidden" name="search" value="@Model.Search" />
-                    <input type="number" name="quantity" value="1" min="1" max="@(outOfStock ? 1 : product.StockQuantity)" class="form-control qty-input" aria-label="Quantity" @(outOfStock ? "disabled" : "") />
-                    <button type="submit" class="btn btn-primary flex-grow-1" @(outOfStock ? "disabled" : "")>Add to cart</button>
-                </form>
             </article>
         }
     </div>

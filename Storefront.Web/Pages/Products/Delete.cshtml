@@ -4,41 +4,57 @@
     ViewData["Title"] = "Delete Product";
 }
 
-<section class="hero mb-4">
-    <div>
-        <h1 class="hero-title">Delete product</h1>
-        <p class="hero-sub">This permanently removes the product from the catalog.</p>
-    </div>
-    <a asp-page="/Products/Index" class="btn btn-outline-dark">← Back to list</a>
-</section>
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+        <!-- Back Button -->
+        <a asp-page="Index" class="btn btn-link text-decoration-none text-muted p-0 mb-3 d-inline-flex align-items-center gap-1">
+            <i class="bi bi-arrow-left"></i> Back to Products
+        </a>
 
-@if (Model.Product != null)
-{
-    <div class="alert alert-danger">
-        Are you sure you want to delete <strong>@Model.Product.Name</strong>? This can't be undone.
-    </div>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <!-- Alert Header Banner -->
+            <div class="bg-danger bg-gradient text-white p-4 text-center">
+                <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 56px; height: 56px;">
+                    <i class="bi bi-trash3-fill fs-3 text-white"></i>
+                </div>
+                <h1 class="h4 fw-bold mb-1">Delete Product</h1>
+                <p class="mb-0 text-white-50 small">Are you sure you want to permanently remove this item?</p>
+            </div>
 
-    <div class="card mb-3" style="max-width: 640px;">
-        <div class="card-body">
-            <dl class="row mb-0">
-                <dt class="col-sm-3">Name</dt>
-                <dd class="col-sm-9">@Model.Product.Name</dd>
+            <!-- Content Body -->
+            <div class="card-body p-4 p-md-5">
+                @if (Model.Error != null)
+                {
+                    <div class="alert alert-danger shadow-sm rounded-3 mb-4">
+                        <strong>Error deleting product:</strong>
+                        <div class="small mt-1">@Model.Error</div>
+                    </div>
+                }
 
-                <dt class="col-sm-3">Description</dt>
-                <dd class="col-sm-9">@Model.Product.Description</dd>
+                <!-- Product Summary Card -->
+                <div class="border rounded-3 p-3 bg-light mb-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h3 class="h5 fw-bold text-dark mb-0">@Model.Product.Name</h3>
+                        <span class="fs-5 fw-bold text-danger">₱@Model.Product.Price.ToString("N2")</span>
+                    </div>
+                    <p class="text-muted small mb-3">@(string.IsNullOrWhiteSpace(Model.Product.Description) ? "No description available." : Model.Product.Description)</p>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top text-muted small">
+                        <span><i class="bi bi-boxes me-1"></i> Current Stock: <strong>@Model.Product.StockQuantity</strong></span>
+                        <span class="font-monospace">ID: #@Model.Product.ValidProductId.ToString()[..8]</span>
+                    </div>
+                </div>
 
-                <dt class="col-sm-3">Price</dt>
-                <dd class="col-sm-9">₱@Model.Product.Price.ToString("N2")</dd>
+                <form method="post">
+                    <input type="hidden" asp-for="Product.ValidProductId" name="id" />
 
-                <dt class="col-sm-3">Stock</dt>
-                <dd class="col-sm-9">@Model.Product.StockQuantity</dd>
-            </dl>
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-page="Index" class="btn btn-light fw-semibold px-4 rounded-3">Cancel</a>
+                        <button type="submit" class="btn btn-danger fw-semibold px-4 rounded-3 shadow-sm">
+                            <i class="bi bi-trash me-1"></i> Confirm Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-
-    <form method="post">
-        <input type="hidden" asp-for="Id" />
-        <button type="submit" class="btn btn-danger">Delete product</button>
-        <a asp-page="/Products/Index" class="btn btn-outline-secondary">Cancel</a>
-    </form>
-}
+</div>

@@ -7,58 +7,51 @@ namespace Storefront.Web.Pages.Products;
 
 public class DeleteModel : PageModel
 {
-    private readonly CatalogApiClient _catalog;
-    private readonly ILogger<DeleteModel> _logger;
+    private readonly CatalogApiClient _catalogApiClient;
 
-    public DeleteModel(CatalogApiClient catalog, ILogger<DeleteModel> logger)
+    public DeleteModel(CatalogApiClient catalogApiClient)
     {
-        _catalog = catalog;
-        _logger = logger;
+        _catalogApiClient = catalogApiClient;
     }
 
-    public ProductDto? Product { get; set; }
-
     [BindProperty]
-    public Guid Id { get; set; }
+    public ProductDto Product { get; set; } = new();
 
-    [TempData]
-    public string? StatusMessage { get; set; }
+    public string? Error { get; set; }
 
     public async Task<IActionResult> OnGetAsync(Guid id)
     {
-        try
-        {
-            Product = await _catalog.GetProductAsync(id);
-            if (Product == null)
-            {
-                StatusMessage = "error|That product no longer exists.";
-                return RedirectToPage("/Products/Index");
-            }
+        var products = await _catalogApiClient.GetProductsAsync();
+        var product = products.FirstOrDefault(p => p.ValidProductId == id);
 
-            Id = id;
-            return Page();
-        }
-        catch (Exception ex)
+        if (product == null)
         {
-            _logger.LogError(ex, "Failed to load product {Id}", id);
-            StatusMessage = $"error|Can't reach the Catalog Service. {ex.Message}";
-            return RedirectToPage("/Products/Index");
+            return RedirectToPage("Index");
         }
+
+        Product = product;
+        return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync(Guid id)
     {
         try
         {
-            var (ok, error) = await _catalog.DeleteProductAsync(Id);
-            StatusMessage = ok ? "success|Product deleted." : $"error|{error}";
+            await _catalogApiClient.DeleteProductAsync(id);
+            return RedirectToPage("Index");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to delete product {Id}", Id);
-            StatusMessage = $"error|Can't reach the Catalog Service. {ex.Message}";
-        }
+            Error = ex.Message;
 
-        return RedirectToPage("/Products/Index");
+            var products = await _catalogApiClient.GetProductsAsync();
+            var product = products.FirstOrDefault(p => p.ValidProductId == id);
+            if (product != null)
+            {
+                Product = product;
+            }
+
+            return Page();
+        }
     }
 }

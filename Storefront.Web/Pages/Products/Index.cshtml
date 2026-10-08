@@ -4,71 +4,124 @@
     ViewData["Title"] = "Manage Products";
 }
 
-<section class="hero mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="hero-title">Manage products</h1>
-        <p class="hero-sub">Create, edit and delete catalog products. Changes are saved through the Catalog API.</p>
+        <h1 class="h3 fw-bold mb-1">Manage Products</h1>
+        <p class="text-muted small mb-0">Create, edit, and track current inventory stocks across all catalog products.</p>
     </div>
-    <a asp-page="/Products/Create" class="btn btn-primary">+ New product</a>
-</section>
-
-<partial name="_StatusMessage" model="Model.StatusMessage" />
+    <a asp-page="Create" class="btn btn-primary fw-semibold rounded-3 px-3 shadow-sm">
+        <i class="bi bi-plus-lg me-1"></i> New product
+    </a>
+</div>
 
 @if (Model.CatalogError != null)
 {
-    <div class="alert alert-danger">
-        <strong>Can't reach the Catalog Service.</strong>
-        Make sure <code>CatalogService.Api</code> is running on <code>https://localhost:7124</code>.
-        <div class="small text-muted mt-1">@Model.CatalogError</div>
+    <div class="alert alert-danger shadow-sm rounded-3 mb-4 d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+        <div>
+            <strong>Can't reach Catalog Service.</strong>
+            <div class="small text-muted mt-1">@Model.CatalogError</div>
+        </div>
     </div>
 }
-else if (!Model.Products.Any())
-{
-    <div class="empty-state">
-        <div class="empty-icon">📦</div>
-        <h5>No products yet</h5>
-        <p class="text-muted mb-0">Click <strong>New product</strong> to add your first one.</p>
-    </div>
-}
-else
-{
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
     <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
+        <table class="table align-middle mb-0">
+            <thead class="bg-light border-bottom">
                 <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th class="text-end">Price</th>
-                    <th class="text-end">Stock</th>
-                    <th>Status</th>
-                    <th class="text-end">Actions</th>
+                    <th class="ps-4 py-3 text-uppercase text-muted fs-7 fw-bold">Name</th>
+                    <th class="py-3 text-uppercase text-muted fs-7 fw-bold">Description</th>
+                    <th class="py-3 text-uppercase text-muted fs-7 fw-bold">Price</th>
+                    <th class="py-3 text-uppercase text-muted fs-7 fw-bold">Stock Available</th>
+                    <th class="py-3 text-uppercase text-muted fs-7 fw-bold">Status</th>
+                    <th class="pe-4 py-3 text-end text-uppercase text-muted fs-7 fw-bold">Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var product in Model.Products)
+                @if (Model.Products == null || !Model.Products.Any())
                 {
                     <tr>
-                        <td class="fw-semibold">@product.Name</td>
-                        <td class="text-muted">@product.Description</td>
-                        <td class="text-end">₱@product.Price.ToString("N2")</td>
-                        <td class="text-end">@product.StockQuantity</td>
-                        <td>
-                            @if (product.IsActive)
-                            {
-                                <span class="badge text-bg-success">Active</span>
-                            }
-                            else
-                            {
-                                <span class="badge text-bg-secondary">Inactive</span>
-                            }
-                        </td>
-                        <td class="text-end">
-                            <a asp-page="/Products/Edit" asp-route-id="@product.ValidProductId" class="btn btn-sm btn-outline-dark">Edit</a>
-                            <a asp-page="/Products/Delete" asp-route-id="@product.ValidProductId" class="btn btn-sm btn-outline-danger">Delete</a>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <div class="fs-2 mb-2">📦</div>
+                            <div class="fw-semibold">No products found</div>
+                            <div class="small">Click "New product" to add one to the catalog.</div>
                         </td>
                     </tr>
+                }
+                else
+                {
+                    @foreach (var product in Model.Products)
+                    {
+                        <tr class="border-bottom">
+                            <!-- Name -->
+                            <td class="ps-4 fw-bold text-dark">@product.Name</td>
+
+                            <!-- Description -->
+                            <td class="text-muted small">
+                                @(string.IsNullOrWhiteSpace(product.Description) ? "-" : product.Description)
+                            </td>
+
+                            <!-- Price -->
+                            <td class="fw-semibold text-dark">₱@product.Price.ToString("N2")</td>
+
+                            <!-- Dynamic Stock Indicator -->
+                            <td>
+                                @if (product.StockQuantity > 10)
+                                {
+                                    <span class="badge bg-light text-dark border px-2 py-1 font-monospace fw-bold">
+                                        📦 @product.StockQuantity units
+                                    </span>
+                                }
+                                else if (product.StockQuantity > 0)
+                                {
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 font-monospace fw-bold">
+                                        ⚠️ @product.StockQuantity left
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 font-monospace fw-bold">
+                                        0 units
+                                    </span>
+                                }
+                            </td>
+
+                            <!-- Dynamic Status Badge -->
+                            <td>
+                                @if (product.StockQuantity > 10)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fw-semibold">
+                                        In Stock
+                                    </span>
+                                }
+                                else if (product.StockQuantity > 0)
+                                {
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-3 py-2 fw-semibold">
+                                        Low Stock
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2 fw-semibold">
+                                        Out of Stock
+                                    </span>
+                                }
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="pe-4 text-end">
+                                <a asp-page="Edit" asp-route-id="@product.ValidProductId" class="btn btn-sm btn-outline-secondary rounded-2 me-1 fw-semibold px-3">
+                                    Edit
+                                </a>
+                                <a asp-page="Delete" asp-route-id="@product.ValidProductId" class="btn btn-sm btn-outline-danger rounded-2 fw-semibold px-3">
+                                    Delete
+                                </a>
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
     </div>
-}
+</div>

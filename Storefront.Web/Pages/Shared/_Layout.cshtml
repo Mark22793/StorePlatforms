@@ -1,60 +1,88 @@
-@inject Storefront.Web.Services.CartService Cart
-@{
-    var cartCount = Cart.Count;
-    var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
-}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#4f46e5" />
     <title>@ViewData["Title"] - Storefront</title>
+
+    <!-- Bootstrap CSS & Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <!-- Optional Page Head Section -->
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body>
-    <a class="skip-link" href="#main">Skip to main content</a>
+<body class="bg-light">
 
-    <header class="site-header">
-        <nav class="container d-flex align-items-center gap-3" aria-label="Primary">
-            <a class="brand" asp-page="/Index">🛍️ Storefront</a>
-            <div class="nav-links">
-                <a asp-page="/Index"
-                   class="@(currentPage == "/Index" ? "active" : "")"
-                   aria-current="@(currentPage == "/Index" ? "page" : null)">Shop</a>
-                <a asp-page="/Orders"
-                   class="@(currentPage == "/Orders" ? "active" : "")"
-                   aria-current="@(currentPage == "/Orders" ? "page" : null)">Orders</a>
-                <a asp-page="/Products/Index"
-                   class="@(currentPage == "/Products/Index" ? "active" : "")"
-                   aria-current="@(currentPage == "/Products/Index" ? "page" : null)">Manage Products</a>
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar navbar-expand-lg bg-white border-bottom shadow-sm py-3">
+            <div class="container">
+                <!-- Brand Logo -->
+                <a class="navbar-brand fw-bold d-flex align-items-center gap-2 text-primary" asp-page="/Index">
+                    <span class="fs-4">🛍️</span>
+                    <span>Storefront</span>
+                </a>
+
+                <!-- Mobile Toggle Button -->
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Nav Links -->
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 gap-2">
+                        <li class="nav-item">
+                            <a class="nav-link px-3 py-2 rounded-2 fw-semibold @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active bg-primary text-white" : "text-dark")" asp-page="/Index">
+                                <i class="bi bi-shop me-1"></i> Shop
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link px-3 py-2 rounded-2 fw-semibold @(ViewContext.RouteData.Values["page"]?.ToString() == "/Orders" ? "active bg-primary text-white" : "text-dark")" asp-page="/Orders">
+                                <i class="bi bi-receipt me-1"></i> Orders
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <!-- INAYOS: /Products/Index ang asp-page at .StartsWith() para sa active state -->
+                            <a class="nav-link px-3 py-2 rounded-2 fw-semibold @(ViewContext.RouteData.Values["page"]?.ToString().StartsWith("/Products") == true ? "active bg-primary text-white" : "text-dark")" asp-page="/Products/Index">
+                                <i class="bi bi-box-seam me-1"></i> Manage Products
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Cart Button on Right -->
+                    <div class="d-flex align-items-center">
+                        <a asp-page="/Cart" class="btn btn-outline-primary fw-semibold px-3 py-2 d-flex align-items-center gap-2 rounded-3">
+                            <i class="bi bi-cart3 fs-5"></i>
+                            <span>Cart</span>
+                        </a>
+                    </div>
+                </div>
             </div>
-            <a asp-page="/Cart"
-               class="cart-link ms-auto @(currentPage == "/Cart" ? "active" : "")"
-               aria-current="@(currentPage == "/Cart" ? "page" : null)"
-               aria-label="@($"Cart{(cartCount > 0 ? $", {cartCount} item{(cartCount == 1 ? "" : "s")}" : " (empty)")}")">
-                <span aria-hidden="true">🛒</span> Cart
-                @if (cartCount > 0)
-                {
-                    <span class="cart-badge" aria-hidden="true">@cartCount</span>
-                }
-            </a>
         </nav>
     </header>
 
-    <main id="main" role="main" tabindex="-1" class="container py-4">
+    <!-- Main Content -->
+    <main role="main" class="container py-4">
         @RenderBody()
     </main>
 
-    <footer class="site-footer">
-        <div class="container small text-muted">
-            Storefront · Catalog, Order, Inventory &amp; Payment microservices
+    <!-- Footer -->
+    <footer class="footer border-top bg-white py-4 mt-5 text-muted text-center small">
+        <div class="container">
+            <span>Storefront &bull; Catalog, Order, Inventory & Payment Microservices</span>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

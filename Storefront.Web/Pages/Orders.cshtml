@@ -1,59 +1,83 @@
 @page
-@model Storefront.Web.Pages.OrdersModel
+@model OrdersModel
 @{
     ViewData["Title"] = "Orders";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="page-title mb-0">Orders</h1>
-    <a asp-page="/Orders" class="btn btn-outline-secondary btn-sm">Refresh</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 fw-bold mb-1">Customer Orders</h1>
+        <p class="text-muted small mb-0">Track live orders processed through the Order → Inventory → Payment saga.</p>
+    </div>
+    <a asp-page="Orders" class="btn btn-outline-secondary btn-sm rounded-2 fw-semibold">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+    </a>
 </div>
 
 @if (Model.Error != null)
 {
-    <div class="alert alert-danger">
+    <div class="alert alert-danger shadow-sm rounded-3 mb-4">
         <strong>Can't reach the Order Service.</strong>
-        Make sure <code>OrderService.Api</code> is running on <code>https://localhost:7054</code>.
         <div class="small text-muted mt-1">@Model.Error</div>
-    </div>
-}
-else if (!Model.Orders.Any())
-{
-    <div class="empty-state">
-        <div class="empty-icon">🧾</div>
-        <h5>No orders yet</h5>
-        <a asp-page="/Index" class="btn btn-primary mt-2">Start shopping</a>
     </div>
 }
 else
 {
-    <div class="panel p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 orders-table">
-                <thead>
+    <div class="table-container">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Placed Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Orders.Any())
+                {
                     <tr>
-                        <th>Order</th>
-                        <th>Customer</th>
-                        <th>Placed</th>
-                        <th class="text-center">Items</th>
-                        <th class="text-end">Total</th>
-                        <th class="text-end">Status</th>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <div class="fs-2 mb-2">📋</div>
+                            <div class="fw-semibold">No orders placed yet</div>
+                            <div class="small">When customers check out, their orders will appear here.</div>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
+                }
+                else
+                {
                     @foreach (var order in Model.Orders)
                     {
+                        var statusClass = order.Status?.ToLower() switch
+                        {
+                            "confirmed" => "confirmed",
+                            "cancelled" => "cancelled",
+                            _ => "pending"
+                        };
+
+                        var totalItemsCount = order.Items?.Sum(i => i.Quantity) ?? 0;
+
                         <tr>
-                            <td><a asp-page="/OrderStatus" asp-route-id="@order.OrderId" class="font-monospace">#@order.OrderId.ToString()[..8]</a></td>
-                            <td>@order.CustomerName</td>
-                            <td class="text-muted small">@order.CreatedAt.ToLocalTime().ToString("MMM d, h:mm tt")</td>
-                            <td class="text-center">@order.Items.Sum(i => i.Quantity)</td>
-                            <td class="text-end">₱@order.TotalAmount.ToString("N2")</td>
-                            <td class="text-end"><span class="status-pill status-@order.Status.ToLowerInvariant()">@order.Status</span></td>
+                            <td class="fw-bold text-primary">#@order.OrderId.ToString()[..8]</td>
+                            <td class="fw-semibold">@(string.IsNullOrWhiteSpace(order.CustomerName) ? "Anonymous" : order.CustomerName)</td>
+                            <td class="text-muted">@order.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy • h:mm tt")</td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    @totalItemsCount @(totalItemsCount == 1 ? "item" : "items")
+                                </span>
+                            </td>
+                            <td class="fw-bold">₱@order.TotalAmount.ToString("N2")</td>
+                            <td>
+                                <span class="badge-status @statusClass">
+                                    @order.Status
+                                </span>
+                            </td>
                         </tr>
                     }
-                </tbody>
-            </table>
-        </div>
+                }
+            </tbody>
+        </table>
     </div>
 }
