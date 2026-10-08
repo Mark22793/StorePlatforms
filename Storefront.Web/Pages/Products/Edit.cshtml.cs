@@ -52,7 +52,7 @@ public class EditModel : PageModel
             var inv = inventoryItems?.FirstOrDefault(i => i.ProductId == id);
             if (inv != null)
             {
-                Input.StockQuantity = Math.Max(0, inv.Quantity - inv.ReservedQuantity);
+                Input.StockQuantity = Math.Max(0, inv.Quantity);
             }
         }
         catch (Exception ex)
@@ -72,7 +72,6 @@ public class EditModel : PageModel
 
         try
         {
-            // Direct object initialization gamit ang id parameter
             var productDto = new ProductDto
             {
                 Name = Input.Name,
@@ -98,7 +97,7 @@ public class EditModel : PageModel
                     {
                         id = inv.Id,
                         productId = id,
-                        quantity = Input.StockQuantity + inv.ReservedQuantity,
+                        quantity = Input.StockQuantity,
                         reservedQuantity = inv.ReservedQuantity
                     };
 

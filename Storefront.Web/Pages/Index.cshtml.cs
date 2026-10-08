@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Storefront.Web.Models;
 using Storefront.Web.Services;
+using System.Net.Http.Json;
 
 namespace Storefront.Web.Pages;
 
@@ -87,8 +88,8 @@ public class IndexModel : PageModel
                         var inv = inventoryItems.FirstOrDefault(i => i.ProductId == product.ValidProductId);
                         if (inv != null)
                         {
-                            // Available Stock = Quantity - ReservedQuantity
-                            product.StockQuantity = Math.Max(0, inv.Quantity - inv.ReservedQuantity);
+                            // Direct Quantity para hindi mag-double deduct dahil sa ReservedQuantity
+                            product.StockQuantity = Math.Max(0, inv.Quantity);
                         }
                     }
                 }

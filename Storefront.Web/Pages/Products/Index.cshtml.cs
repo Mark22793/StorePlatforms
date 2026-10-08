@@ -49,8 +49,8 @@ public class IndexModel : PageModel
                         var inv = inventoryItems.FirstOrDefault(i => i.ProductId == product.ValidProductId);
                         if (inv != null)
                         {
-                            // Available Stock = Quantity - ReservedQuantity
-                            product.StockQuantity = Math.Max(0, inv.Quantity - inv.ReservedQuantity);
+                            // Direct Quantity para patas ang bilang sa Shop page
+                            product.StockQuantity = Math.Max(0, inv.Quantity);
                         }
                     }
                 }
